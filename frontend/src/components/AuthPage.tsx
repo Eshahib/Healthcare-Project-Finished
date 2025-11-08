@@ -39,9 +39,22 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
   }, [onAuthSuccess, navigate]);
 
   return (
-    <div>
-      <h2>Please log in</h2>
-      <button onClick={googleLogin}>Login with Google</button>
+    <div className="min-h-screen bg-gradient-to-tr from-purple-600 to-blue-500 flex flex-col justify-center items-center px-4">
+      <div className="bg-white rounded-xl shadow-lg p-12 max-w-md w-full text-center">
+        <h1 className="text-4xl font-bold mb-6 text-gray-900">Welcome to Symptom Checker</h1>
+        <p className="text-gray-600 mb-8">
+          Please log in with your Google account to continue.
+        </p>
+        <button
+          onClick={googleLogin}
+          className="w-full bg-gradient-to-r from-purple-600 to-blue-500 text-white font-semibold py-3 rounded-lg shadow-md hover:brightness-110 transition"
+        >
+          Login with Google
+        </button>
+      </div>
+      <footer className="mt-12 text-white opacity-75">
+        &copy; 2025 Your Company Name. All rights reserved.
+      </footer>
     </div>
   );
 }
