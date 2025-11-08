@@ -38,6 +38,21 @@ function App() {
     checkAuth();
   }, []);
 
+  const logout = async () => {
+    try {
+      await fetch("http://localhost:8000/api/logout", {
+        method: "POST",
+        credentials: "include",  
+      });
+      
+      setUser(null);
+      
+      // Redirect to login page or update UI accordingly
+    } catch (err) {
+      console.error("Logout failed", err);
+    }
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -58,6 +73,7 @@ function App() {
           <SymptomChecker
             user={user}
             onAnalyzeComplete={handleAnalyzeComplete}
+            onLogout={logout}
           /> : <Navigate to="/login" />}
         />
         <Route
@@ -66,6 +82,7 @@ function App() {
           <ResultsPage
             symptomEntryId={symptomEntryId}
             user={user}
+            onLogout={logout}
             onBack={handleBackToSymptoms}
           /> : <Navigate to="/login" />}
         />

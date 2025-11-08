@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Depends, HTTPException, Cookie
 from authlib.integrations.starlette_client import OAuth
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response, RedirectResponse
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from jose import jwt
@@ -79,12 +79,15 @@ async def auth(request: Request, db: Session = Depends(getDB)):
             "token_type": "bearer",
         }
     )
+    frontend_url = "http://localhost:5173/symptoms"
+    response = RedirectResponse(url=frontend_url)
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=False,
         secure=False,  # Set True in production with HTTPS
         samesite="lax",
+        max_age=3600,
     )
 
     return response
@@ -107,3 +110,12 @@ async def get_current_user(access_token: str = Cookie(None), db: Session = Depen
         raise HTTPException(status_code=404, detail="User not found")
 
     return {"user": {"username": user.username, "email": user.email}}
+
+
+
+@router.post("/logout")
+async def logout():
+    response = Response(content="Logged out")
+    # Clear cookie by setting max_age=0
+    response.delete_cookie(key="access_token", path="/")
+    return response
