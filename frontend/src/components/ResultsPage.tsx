@@ -3,6 +3,7 @@ import { Button } from './ui/button'
 import { CheckCircle, AlertCircle, ArrowLeft, Loader2 } from 'lucide-react'
 import { getSymptomEntry, type SymptomEntryWithDiagnosis } from '@/lib/api'
 import type { UserResponse } from '@/lib/api'
+const API_BASE_URL = 'http://localhost:8000/api';
 
 interface ResultsPageProps {
   symptomEntryId: number
@@ -17,25 +18,38 @@ export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: 
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchResults = async () => {
+    const getResults = async () => {
+      setIsLoading(true);
+      setError(null);
       try {
-        setIsLoading(true)
-        const data = await getSymptomEntry(symptomEntryId)
-        setSymptomEntry(data)
-        console.log(data);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load results'
-        setError(errorMessage)
-      } finally {
-        console.log("runs");
-        setIsLoading(false)
-      }
-    }
+        const res = await fetch(`${API_BASE_URL}/make/diagnose`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            symptoms: ["fever", "cough", "fatigue", "vomitting from head injury"], 
+            username: user?.username,
+            symptomEntry: symptomEntryId
+          })
+        });
 
-    if (symptomEntryId) {
-      fetchResults()
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        setSymptomEntry(data);
+      } catch (error){
+        console.log(error)
+        setError(error instanceof Error ? error.message : "Failed to get diagnosis");
+        } 
+      finally {
+        setIsLoading(false);
+      }
+
     }
-  }, [symptomEntryId])
+    getResults();
+  }, [symptomEntryId]);
+
+  console.log(symptomEntry);
 
   if (isLoading) {
     return (

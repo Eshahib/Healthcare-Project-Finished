@@ -4,6 +4,14 @@ import models
 from database import getDB
 from schemas import DiagnosisCreate, DiagnosisResponse
 from audit_log import log_phi_access
+import os
+import requests
+from dotenv import load_dotenv
+import json
+from encryption import encrypt_phi
+from pydantic import BaseModel
+import time
+import re
 
 router = APIRouter()
 
@@ -87,3 +95,46 @@ def create_diagnosis(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create diagnosis: {str(e)}"
         )
+
+
+
+load_dotenv()
+
+NEURALSEEK_API_URL = os.getenv("NEURALSEEK_API_URL", "https://stagingapi.neuralseek.com/v1/stony4/maistro")
+NEURALSEEK_API_KEY = os.getenv("NEURALSEEK_API_KEY")
+
+router = APIRouter()
+
+class SymptomInput(BaseModel):
+    symptoms: list[str]
+    username: str
+    symptomEntry: int
+
+@router.post("/make/diagnose")
+async def diagnose(symptoms: SymptomInput, request: Request, db : Session = Depends(getDB)):
+    payload = {
+        "agent": "Healthcare",
+        "params": [
+            {"name": "symptoms", "value": symptoms.symptoms}
+        ]
+    }
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/event-stream",
+        "apikey": NEURALSEEK_API_KEY
+    }
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(NEURALSEEK_API_URL, headers=headers, json=payload, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+
+            diagnosis_text = data["answer"]
+
+            return data
+        except requests.exceptions.ReadTimeout:
+            print(f"Timeout, retry {attempt+1}...")
+            time.sleep(2)
+    else:
+        print("Diagnosis failed after retries.")
