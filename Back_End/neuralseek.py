@@ -8,21 +8,22 @@ load_dotenv()
 NEURALSEEK_API_URL = os.getenv("NEURALSEEK_API_URL", "https://stagingapi.neuralseek.com/v1/stony4/maistro")
 NEURALSEEK_API_KEY = os.getenv("NEURALSEEK_API_KEY")
 
-inputSymptoms = {"fever": True, "cough": True, "fatigue": False}  # example payload
+inputSymptoms = ["fever", "cough", "fatigue", "vomitting from head injury"]  # example payload
 
 payload = {
-    "jsonrpc": "2.0",
-    "method": "tools/call",
-    "params": {
-        "name": "symptoms",
-        "value": inputSymptoms
-    },
-    "id": 1
+    "agent": "Healthcare",
+    "params": [
+        {
+            "name": "symptoms",
+            "value": inputSymptoms  # Convert list to JSON string
+        }
+    ],
 }
 
 headers = {
     "Content-Type": "application/json",
-    "Authorization": f"Bearer {NEURALSEEK_API_KEY}"
+    "Accept": "application/json, text/event-stream",
+    "apikey": NEURALSEEK_API_KEY
 }
 
 # 🧠 Print the payload you’re about to send
