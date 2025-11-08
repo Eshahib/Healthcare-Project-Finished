@@ -41,9 +41,9 @@ export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: 
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+          <div className="bg-white rounded-lg shadow-sm p-12 text-center border border-gray-200">
             <Loader2 className="h-12 w-12 animate-spin text-purple-600 mx-auto mb-4" />
-            <p className="text-gray-600">Loading your results...</p>
+            <p className="text-gray-900">Loading your results...</p>
           </div>
         </div>
       </div>
@@ -54,12 +54,12 @@ export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: 
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-sm p-8">
+          <div className="bg-white rounded-lg shadow-sm p-8 border border-gray-200">
             <div className="flex items-center gap-3 text-red-600 mb-4">
               <AlertCircle className="h-6 w-6" />
               <h2 className="text-xl font-semibold">Error Loading Results</h2>
             </div>
-            <p className="text-gray-600 mb-6">{error}</p>
+            <p className="text-gray-900 mb-6">{error}</p>
             <Button onClick={onBack} variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Symptom Checker
@@ -81,25 +81,29 @@ export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: 
               <p className="text-gray-600 mt-1">Welcome, {user.username}</p>
             )}
           </div>
-          <Button onClick={onLogout} variant="outline">
+          <Button 
+            onClick={onLogout} 
+            variant="outline"
+            className="px-4 py-2"
+          >
             Logout
           </Button>
         </div>
 
         {/* Results Card */}
-        <div className="bg-white rounded-lg shadow-sm p-8">
+        <div className="bg-white rounded-lg shadow-sm p-8 border border-gray-200">
           {/* Submitted Symptoms */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <CheckCircle className="h-6 w-6 text-green-600" />
               Your Submitted Symptoms
             </h2>
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
               <div className="flex flex-wrap gap-2 mb-4">
                 {symptomEntry?.symptoms.map((symptom, index) => (
                   <span
                     key={index}
-                    className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium"
+                    className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium border border-purple-300"
                   >
                     {symptom}
                   </span>
@@ -148,10 +152,10 @@ export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: 
                     <h3 className="font-semibold text-gray-900 mb-2">Confidence Level</h3>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                       symptomEntry.diagnosis.confidence_score === 'high' 
-                        ? 'bg-green-100 text-green-800'
+                        ? 'bg-green-100 text-green-800 border border-green-300'
                         : symptomEntry.diagnosis.confidence_score === 'medium'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-orange-100 text-orange-800'
+                        ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
+                        : 'bg-orange-100 text-orange-800 border border-orange-300'
                     }`}>
                       {symptomEntry.diagnosis.confidence_score.charAt(0).toUpperCase() + 
                        symptomEntry.diagnosis.confidence_score.slice(1)}
@@ -183,7 +187,7 @@ export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: 
           {/* Disclaimer */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
             <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
               <p className="text-sm text-yellow-800">
                 This tool provides educational information only. Always consult a healthcare
                 professional for medical advice and proper diagnosis.
@@ -196,7 +200,7 @@ export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: 
             <Button
               onClick={onBack}
               variant="outline"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 px-4 py-2"
             >
               <ArrowLeft className="h-4 w-4" />
               Submit New Symptoms

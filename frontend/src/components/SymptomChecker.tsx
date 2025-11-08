@@ -39,8 +39,7 @@ const symptomCategories: SymptomCategory[] = [
     id: 'respiratory',
     name: 'Respiratory',
     icon: Wind,
-    symptoms: ['Cough', 'Sore throat', 'Congestion', 'Shortness of breath', 'Runny nose', 'Sneezing'],
-    highlighted: true
+    symptoms: ['Cough', 'Sore throat', 'Congestion', 'Shortness of breath', 'Runny nose', 'Sneezing']
   },
   {
     id: 'digestive',
@@ -125,7 +124,7 @@ export default function SymptomChecker({ user, onLogout, onAnalyzeComplete }: Sy
             <Button
               onClick={onLogout}
               variant="outline"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 px-4 py-2"
             >
               <LogOut className="h-4 w-4" />
               Logout
@@ -134,7 +133,7 @@ export default function SymptomChecker({ user, onLogout, onAnalyzeComplete }: Sy
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Panel - Symptom Selection */}
-          <div className="lg:col-span-2 bg-white rounded-lg shadow-sm p-6">
+          <div className="lg:col-span-2 bg-white rounded-lg shadow-sm p-6 border border-gray-200">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Select Your Symptoms</h1>
             <p className="text-gray-600 mb-6">Choose all symptoms you're currently experiencing</p>
 
@@ -146,7 +145,7 @@ export default function SymptomChecker({ user, onLogout, onAnalyzeComplete }: Sy
                     <div
                       className={`flex items-center gap-3 mb-4 ${
                         category.highlighted
-                          ? 'bg-blue-50 px-3 py-2 rounded-lg'
+                          ? 'bg-blue-50 px-3 py-2 rounded-lg border border-blue-200'
                           : ''
                       }`}
                     >
@@ -178,7 +177,7 @@ export default function SymptomChecker({ user, onLogout, onAnalyzeComplete }: Sy
           {/* Right Panel - Actions and Info */}
           <div className="space-y-6">
             {/* Patient Comments */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900 mb-2">
                 Additional Comments
               </h2>
@@ -189,13 +188,13 @@ export default function SymptomChecker({ user, onLogout, onAnalyzeComplete }: Sy
                 placeholder="Enter any additional information about your symptoms, when they started, severity, or any other relevant details..."
                 value={patientComments}
                 onChange={(e) => setPatientComments(e.target.value)}
-                className="w-full min-h-[120px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
+                className="w-full min-h-[120px] rounded-md border border-gray-300 bg-white text-gray-900 px-3 py-2 text-sm ring-offset-white placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50 resize-y"
                 rows={5}
               />
             </div>
 
             {/* Ready to Analyze */}
-            <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg shadow-sm p-6 text-white">
+            <div className="bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg shadow-sm p-6 text-white border border-purple-500">
               <h2 className="text-lg font-semibold mb-2">Ready to Analyze?</h2>
               <p className="text-sm text-purple-100 mb-4">
                 Select at least one symptom to continue
@@ -226,7 +225,7 @@ export default function SymptomChecker({ user, onLogout, onAnalyzeComplete }: Sy
             {/* Disclaimer */}
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
                 <p className="text-sm text-yellow-800">
                   This tool provides educational information only. Always consult a healthcare
                   professional for medical advice.
