@@ -16,7 +16,7 @@ import { createSymptomEntry, type SymptomEntryResponse, type UserResponse } from
 
 interface SymptomCheckerProps {
   user: UserResponse | null
-  onLogout: () => void
+  onLogout?: () => void
   onAnalyzeComplete: (entryId: number) => void
 }
 
@@ -78,7 +78,7 @@ export default function SymptomChecker({ user, onLogout, onAnalyzeComplete }: Sy
     setSelectedSymptoms(newSelected)
     // Clear messages when user changes selection
     setError(null)
-    setSuccess(null)
+
   }
 
   const handleAnalyze = async () => {
@@ -86,14 +86,15 @@ export default function SymptomChecker({ user, onLogout, onAnalyzeComplete }: Sy
 
     setIsLoading(true)
     setError(null)
+    console.log(user?.email);
 
     try {
       const response: SymptomEntryResponse = await createSymptomEntry({
         symptoms: Array.from(selectedSymptoms),
         comments: patientComments.trim() || undefined,
-        user_id: user?.id,
+        user_email: user?.email ?? undefined,      
       })
-
+      console.log(response.id)
       // Navigate to results page
       onAnalyzeComplete(response.id)
       
