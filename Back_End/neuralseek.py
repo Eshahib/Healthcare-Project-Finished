@@ -2,27 +2,30 @@ import os
 import requests
 from dotenv import load_dotenv
 import json
+from encryption import encrypt_phi
+from audit_log import log_phi_access
 
 load_dotenv()
 
 NEURALSEEK_API_URL = os.getenv("NEURALSEEK_API_URL", "https://stagingapi.neuralseek.com/v1/stony4/maistro")
 NEURALSEEK_API_KEY = os.getenv("NEURALSEEK_API_KEY")
 
-inputSymptoms = {"fever": True, "cough": True, "fatigue": False}  # example payload
+inputSymptoms = ["fever", "cough", "fatigue", "vomitting from head injury"]  # example payload
 
 payload = {
-    "jsonrpc": "2.0",
-    "method": "tools/call",
-    "params": {
-        "name": "symptoms",
-        "value": inputSymptoms
-    },
-    "id": 1
+    "agent": "Healthcare",
+    "params": [
+        {
+            "name": "symptoms",
+            "value": inputSymptoms  # Convert list to JSON string
+        }
+    ],
 }
 
 headers = {
     "Content-Type": "application/json",
-    "Authorization": f"Bearer {NEURALSEEK_API_KEY}"
+    "Accept": "application/json, text/event-stream",
+    "apikey": NEURALSEEK_API_KEY
 }
 
 # 🧠 Print the payload you’re about to send
@@ -32,10 +35,14 @@ print(json.dumps(payload, indent=2))
 # 🚀 Send request
 response = requests.post(NEURALSEEK_API_URL, headers=headers, json=payload)
 
+
+
 # 🧾 Print HTTP status + body
 print(f"\n🔁 Status Code: {response.status_code}")
 print("🧩 Response JSON:")
 try:
-    print(json.dumps(response.json(), indent=2))
+    data = response.json()
+    print(data)
+    print(data["answer"])
 except ValueError:
     print(response.text)
