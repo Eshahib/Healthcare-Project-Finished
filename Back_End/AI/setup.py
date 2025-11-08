@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from dotenv import load_dotenv
 import kagglehub
-from processing import clean_data, format_data, prep_RAG, retrieve_context, generate_answer, process_query
+from processing import clean_data, format_data, prep_RAG, retrieve_context, generate_answer, process_query, count_keywords, generate_differential_answer
 # Load environment variables from .env file
 load_dotenv()
 # Get API key from environment variable
@@ -82,27 +82,60 @@ print("READY")
 
 #main chat loop
 while True:
-    user_q = input("Ask a question about a disease (or 'quit'): ")
-    if user_q.lower() == 'quit':
+    print("\n" + "="*80)
+    print("What would you like to do?")
+    print("1: Search by Disease Name (e.g., 'malaria')")
+    print("2: Search by Symptoms (e.g., 'i have a fever and headache')")
+    print("Type 'quit' to exit.")
+    print("="*80)
+    
+    mode = input("Enter your choice (1 or 2): ")
+    
+    if mode.lower() == 'quit':
         break
+    
+    # --- MODE 1: Search by Disease Name (Your original logic) ---
+    if mode == '1':
+        disease_query = input("Enter the disease name: ").strip().lower()
+        if not disease_query:
+            continue
+            
+        # 1. RETRIEVE (Exact Match)
+        context = retrieve_context(new_df, disease_query)
         
-    # For this simple model, we assume the user's question IS the disease name
-    # A more advanced model would extract the disease name from the question
-    disease_query = user_q.strip().lower() 
+        if context is None:
+            print(f"Sorry, I have no information on '{disease_query}'.")
+        else:
+            full_question = f"Tell me about {context.name}. What are its symptoms, causes, and treatments?"
+            
+            # 2. AUGMENT & 3. GENERATE (Single Answer)
+            print("Generating answer...")
+            answer = generate_answer(context, full_question, model)
+            print("\n--- ANSWER ---")
+            print(answer)
+            print("---------------\n")
 
-    # 1. RETRIEVE
-    context = retrieve_context(new_df, disease_query)
-    new_query = process_query(disease_query)
-    print(new_query)
-    # if context is None:
-    #     print(f"Sorry, I have no information on '{disease_query}'.")
-    # else:
-    #     # We can ask a more general question now
-    #     full_question = f"Tell me about {context.name}. What are its symptoms, causes, and treatments?"
-        
-    #     # 2. AUGMENT & 3. GENERATE
-    #     print("Generating answer...")
-    #     answer = generate_answer(context, full_question, model)
-    #     print("\n--- ANSWER ---")
-    #     print(answer)
-    #     print("---------------\n")
+    # --- MODE 2: Search by Symptoms (Your new feature) ---
+    elif mode == '2':
+        user_query = input("Describe your symptoms: ").strip()
+        if not user_query:
+            continue
+            
+        # 1. RETRIEVE (Symptom Search)
+        print("Searching for matching diseases...")
+        processed_query = process_query(user_query)
+        context_df = count_keywords(processed_query, new_df, tidy_dataframes['symptom'], 'symptom', top_n=3)
+        # print(context_df)
+        # print("________________________________")
+        if context_df is None or context_df.empty:
+            print(f"Sorry, I couldn't find any diseases matching those symptoms.")
+        else:
+            # 2. AUGMENT & 3. GENERATE (Differential Answer)
+            print("Generating answer...")
+            answer = generate_differential_answer(context_df, user_query, model)
+            print("\n--- ANSWER ---")
+            print(answer)
+            print("---------------\n")
+    
+    else:
+        print("Invalid choice. Please enter 1, 2, or 'quit'.")
