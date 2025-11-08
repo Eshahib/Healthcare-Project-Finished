@@ -31,6 +31,49 @@ from auth import (
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
+def get_symptom_data_for_api(symptom_entry: models.SymptomEntry) -> dict:
+    """
+    Collects decrypted symptoms and comments into a single data structure
+    ready for JSON serialization to send to external APIs.
+    
+    Args:
+        symptom_entry: SymptomEntry model instance
+        
+    Returns:
+        dict: Combined data structure with symptoms and comments
+        {
+            "symptoms": ["Fever", "Cough", ...],
+            "comments": "Patient's free response text",
+            "symptom_entry_id": 1
+        }
+    """
+    # Accessing .symptoms and .comments automatically decrypts them
+    decrypted_symptoms = symptom_entry.symptoms  # List[str] - auto-decrypted
+    decrypted_comments = symptom_entry.comments  # Optional[str] - auto-decrypted
+    
+    # Combine into a single data structure
+    combined_data = {
+        "symptoms": decrypted_symptoms,
+        "comments": decrypted_comments if decrypted_comments else "",
+        "symptom_entry_id": symptom_entry.id
+    }
+    
+    return combined_data
+
+def get_symptom_data_json_string(symptom_entry: models.SymptomEntry) -> str:
+    """
+    Returns the combined symptom data as a JSON string ready to send to APIs.
+    
+    Args:
+        symptom_entry: SymptomEntry model instance
+        
+    Returns:
+        str: JSON string representation of the combined data
+    """
+    import json
+    data = get_symptom_data_for_api(symptom_entry)
+    return json.dumps(data, ensure_ascii=False)
+
 def init_db():
     """Initialize database tables."""
     Base.metadata.create_all(bind=engine)
