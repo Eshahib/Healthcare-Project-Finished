@@ -88,10 +88,17 @@ def create_symptom_entry(
     """
     try:
         # Create symptom entry with encrypted data
+        print("EHRERERERERER")
+        print(symptom_data.user_email)
+        user = db.query(models.User).filter(models.User.email == symptom_data.user_email).first()
+
+        if not user:
+            raise HTTPException(status_code=404, detail="could not find the user")
+        
         symptom_entry = models.SymptomEntry()
         symptom_entry.symptoms = symptom_data.symptoms
         symptom_entry.comments = symptom_data.comments
-        symptom_entry.user_id = symptom_data.user_id
+        symptom_entry.user_id = user.id
         
         db.add(symptom_entry)
         db.commit()

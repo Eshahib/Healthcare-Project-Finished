@@ -86,12 +86,13 @@ export default function SymptomChecker({ user, onLogout, onAnalyzeComplete }: Sy
 
     setIsLoading(true)
     setError(null)
+    console.log(user?.email);
 
     try {
       const response: SymptomEntryResponse = await createSymptomEntry({
         symptoms: Array.from(selectedSymptoms),
         comments: patientComments.trim() || undefined,
-        user_id: user?.id,
+        user_email: user?.email ?? undefined,      
       })
 
       // Navigate to results page

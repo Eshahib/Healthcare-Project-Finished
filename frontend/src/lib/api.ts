@@ -113,6 +113,7 @@ export interface SymptomEntryRequest {
   symptoms: string[];
   comments?: string;
   user_id?: number;
+  user_email? : string;
 }
 
 export interface SymptomEntryResponse {
