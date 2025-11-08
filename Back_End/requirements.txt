@@ -10,3 +10,9 @@ python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
 requests
+google-generativeai
+python-dotenv
+kagglehub
+pandas
+openpyxl
+collections
