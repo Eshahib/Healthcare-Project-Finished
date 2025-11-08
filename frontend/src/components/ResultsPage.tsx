@@ -8,7 +8,7 @@ interface ResultsPageProps {
   symptomEntryId: number
   user: UserResponse | null
   onBack: () => void
-  onLogout: () => void
+  onLogout?: () => void
 }
 
 export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: ResultsPageProps) {

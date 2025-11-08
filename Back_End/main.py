@@ -5,10 +5,12 @@ All PHI data is encrypted at rest and audit logged
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import timedelta
 import models
+import os
 from database import engine, Base, getDB
 from schemas import (
     SymptomEntryCreate,
@@ -21,13 +23,7 @@ from schemas import (
     Token
 )
 from audit_log import log_phi_access
-from auth import (
-    authenticate_user,
-    get_password_hash,
-    create_access_token,
-    get_user,
-    ACCESS_TOKEN_EXPIRE_MINUTES
-)
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
@@ -43,13 +39,20 @@ app = FastAPI(
 )
 
 # CORS middleware - configure allowed origins in production
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],  # Add your frontend URLs
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],  # Your frontend URLs
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )
+
+# Use a strong secret key for session cookie signing; load from env var
+SESSION_SECRET = os.getenv("SESSION_SECRET", "super-secret-random-string")
+
+# Middleware order matters: add SessionMiddleware before CORS
+app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
 
 @app.get("/")
 def root():
@@ -70,106 +73,8 @@ def health_check(db: Session = Depends(getDB)):
         return {"status": "error", "db": str(e)}
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(getDB)):
-    """Get the current authenticated user from JWT token."""
-    from jose import JWTError, jwt
-    from auth import SECRET_KEY, ALGORITHM
-    
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-    user = db.query(models.User).filter(models.User.username == username).first()
-    if user is None:
-        raise credentials_exception
-    return user
-
-
-@app.post("/api/auth/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(user_data: UserCreate, db: Session = Depends(getDB)):
-    """Register a new user."""
-    try:
-        # Check if username already exists
-        existing_user = db.query(models.User).filter(models.User.username == user_data.username).first()
-        if existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username already registered"
-            )
-        
-        # Check if email already exists (if provided)
-        if user_data.email:
-            existing_email = db.query(models.User).filter(models.User.email == user_data.email).first()
-            if existing_email:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Email already registered"
-                )
-        
-        # Create new user
-        hashed_password = get_password_hash(user_data.password)
-        new_user = models.User(
-            username=user_data.username,
-            email=user_data.email,
-            hashed_password=hashed_password
-        )
-        
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
-        
-        return UserResponse(
-            id=new_user.id,
-            username=new_user.username,
-            email=new_user.email,
-            created_at=new_user.created_at
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        print(f"Registration error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Registration failed: {str(e)}"
-        )
-
-
-@app.post("/api/auth/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(getDB)):
-    """Login and get access token."""
-    user = authenticate_user(db, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
-
-
-@app.get("/api/auth/me", response_model=UserResponse)
-async def read_users_me(current_user: models.User = Depends(get_current_user)):
-    """Get current user information."""
-    return UserResponse(
-        id=current_user.id,
-        username=current_user.username,
-        email=current_user.email,
-        created_at=current_user.created_at
-    )
-
+from auth import router as asuthRouter
+app.include_router(asuthRouter, prefix="/api")
 
 @app.post("/api/symptoms", response_model=SymptomEntryResponse, status_code=status.HTTP_201_CREATED)
 def create_symptom_entry(

@@ -1,65 +1,109 @@
-"""
-Authentication utilities for user login and registration
-"""
-from datetime import datetime, timedelta
-from typing import Optional
-from jose import JWTError, jwt
-import bcrypt
+from fastapi import APIRouter, Request, Depends, HTTPException, Cookie
+from authlib.integrations.starlette_client import OAuth
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-import models
+from datetime import datetime, timedelta
+from jose import jwt
+import os
 
-# JWT settings
-SECRET_KEY = "your-secret-key-change-in-production"  # TODO: Move to environment variable
+from database import getDB
+from models import User
+
+SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash."""
-    try:
-        password_bytes = plain_password.encode('utf-8')
-        hashed_bytes = hashed_password.encode('utf-8')
-        return bcrypt.checkpw(password_bytes, hashed_bytes)
-    except Exception:
-        return False
-
-
-def get_password_hash(password: str) -> str:
-    """Hash a password."""
-    # Bcrypt has a 72 byte limit, truncate if necessary
-    password_bytes = password.encode('utf-8')
-    if len(password_bytes) > 72:
-        password_bytes = password_bytes[:72]
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password_bytes, salt)
-    return hashed.decode('utf-8')
-
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    """Create a JWT access token."""
+def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+router = APIRouter()
 
-def authenticate_user(db: Session, username: str, password: str):
-    """Authenticate a user by username and password."""
-    user = db.query(models.User).filter(models.User.username == username).first()
+oauth = OAuth()
+oauth.register(
+    name="google",
+    client_id=os.getenv("GOOGLE_CLIENT_ID"),
+    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+    client_kwargs={"scope": "openid email profile"},
+)
+
+@router.get("/login")
+async def login(request: Request):
+    redirect_uri = request.url_for("auth")
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+@router.get("/auth")
+async def auth(request: Request, db: Session = Depends(getDB)):
+    token = await oauth.google.authorize_access_token(request)
+    user_info = None
+
+    if "id_token" in token:
+        try:
+            user_info = await oauth.google.parse_id_token(request, token)
+        except Exception:
+            pass
+
+    if not user_info:
+        user_info = await oauth.google.userinfo(token=token)
+
+    if not user_info:
+        raise HTTPException(status_code=400, detail="Failed to fetch user info")
+
+    email = user_info.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email not found in Google account")
+
+    user = db.query(User).filter(User.email == email).first()
+
     if not user:
-        return False
-    if not user.hashed_password:
-        return False
-    if not verify_password(password, user.hashed_password):
-        return False
-    return user
+        user = User(username=email.split("@")[0], email=email, hashed_password=None)
+        db.add(user)
+        try:
+            db.commit()
+            db.refresh(user)
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Database commit failed: {e}")
 
+    user_data = {"sub": str(user.id), "username": user.username, "email": user.email}
+    access_token = create_access_token(data=user_data)
 
-def get_user(db: Session, user_id: int):
-    """Get a user by ID."""
-    return db.query(models.User).filter(models.User.id == user_id).first()
+    response = JSONResponse(
+        content={
+            "message": "Login successful",
+            "user": {"username": user.username, "email": user.email},
+            "token_type": "bearer",
+        }
+    )
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=False,
+        secure=False,  # Set True in production with HTTPS
+        samesite="lax",
+    )
 
+    return response
+
+@router.get("/me")
+async def get_current_user(access_token: str = Cookie(None), db: Session = Depends(getDB)):
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    try:
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = db.query(User).filter(User.id == int(user_id)).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {"user": {"username": user.username, "email": user.email}}
