@@ -1,9 +1,11 @@
 import google.generativeai as genai
+import numpy as np
 import os
 import pandas as pd
 from dotenv import load_dotenv
 import kagglehub
-from processing import clean_data, format_data, prep_RAG, retrieve_context, generate_answer, process_query, count_keywords, generate_differential_answer
+from processing import clean_data, format_data, prep_RAG, setup_embedding
+from chatloop import chatloop
 # Load environment variables from .env file
 load_dotenv()
 # Get API key from environment variable
@@ -12,8 +14,9 @@ if not api_key:
     raise ValueError("GEMINI_API_KEY environment variable is not set. Please create a .env file with GEMINI_API_KEY=your-api-key or set it as an environment variable.")
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel("gemini-2.5-flash")
+embedding_model = "models/text-embedding-004"
 
-path = kagglehub.dataset_download("dantecady/comprehensive-disease-profiles-dataset")
+path = kagglehub.dataset_download("dantecady/comprehensive-disease-profiles-dataset") #get the datasaet
 filepath = os.path.join(path, "disease_dataset.xlsx")
 
 df = pd.read_excel(filepath, header=None)
@@ -61,15 +64,10 @@ melt_groups = {
     'diagnosis': ['diagnosis_1', 'diagnosis_2', 'diagnosis_3'],
     'complication': ['complication_1', 'complication_2', 'complication_3']
 }
-#constant variables
-stable_vars = ['disease_name', 'alt_name', 'description', 'prognosis', 'severity', 'region']
-#base dataframe is all stable variables
-base_df = clean_df[stable_vars].set_index('disease_name')
-#use dictionary to hold the new, stable + melted dataframes
-tidy_dataframes = {}
+stable_vars = ['disease_name', 'alt_name', 'description', 'prognosis', 'severity', 'region'] #constant variables
+base_df = clean_df[stable_vars].set_index('disease_name') #base dataframe is all stable variables
+tidy_dataframes = {} #use dictionary to hold the new, stable + melted dataframes
 for new_name, col_list in melt_groups.items():
-    # print(f"Processing: {new_name}s")
-    # Always melt from the original clean_df
     tidy_dataframes[new_name] = format_data(
         clean_df, 
         id_vars=stable_vars,
@@ -78,64 +76,15 @@ for new_name, col_list in melt_groups.items():
     )
 
 new_df = prep_RAG(tidy_dataframes, base_df)
-print("READY")
+print("READY ")
+doc_embeddings = setup_embedding(new_df, embedding_model)
+semantic_search_ready = False
 
-#main chat loop
-while True:
-    print("\n" + "="*80)
-    print("What would you like to do?")
-    print("1: Search by Disease Name (e.g., 'malaria')")
-    print("2: Search by Symptoms (e.g., 'i have a fever and headache')")
-    print("Type 'quit' to exit.")
-    print("="*80)
-    
-    mode = input("Enter your choice (1 or 2): ")
-    
-    if mode.lower() == 'quit':
-        break
-    
-    # --- MODE 1: Search by Disease Name (Your original logic) ---
-    if mode == '1':
-        disease_query = input("Enter the disease name: ").strip().lower()
-        if not disease_query:
-            continue
-            
-        # 1. RETRIEVE (Exact Match)
-        context = retrieve_context(new_df, disease_query)
-        
-        if context is None:
-            print(f"Sorry, I have no information on '{disease_query}'.")
-        else:
-            full_question = f"Tell me about {context.name}. What are its symptoms, causes, and treatments?"
-            
-            # 2. AUGMENT & 3. GENERATE (Single Answer)
-            print("Generating answer...")
-            answer = generate_answer(context, full_question, model)
-            print("\n--- ANSWER ---")
-            print(answer)
-            print("---------------\n")
+if doc_embeddings:
+    doc_embeddings_matrix = np.array(doc_embeddings)
+    all_disease_names = new_df.index.tolist()
+    semantic_search_ready = True
+else:
+    semantic_search_ready = False
 
-    # --- MODE 2: Search by Symptoms (Your new feature) ---
-    elif mode == '2':
-        user_query = input("Describe your symptoms: ").strip()
-        if not user_query:
-            continue
-            
-        # 1. RETRIEVE (Symptom Search)
-        print("Searching for matching diseases...")
-        processed_query = process_query(user_query)
-        context_df = count_keywords(processed_query, new_df, tidy_dataframes['symptom'], 'symptom', top_n=3)
-        # print(context_df)
-        # print("________________________________")
-        if context_df is None or context_df.empty:
-            print(f"Sorry, I couldn't find any diseases matching those symptoms.")
-        else:
-            # 2. AUGMENT & 3. GENERATE (Differential Answer)
-            print("Generating answer...")
-            answer = generate_differential_answer(context_df, user_query, model)
-            print("\n--- ANSWER ---")
-            print(answer)
-            print("---------------\n")
-    
-    else:
-        print("Invalid choice. Please enter 1, 2, or 'quit'.")
+chatloop(new_df, model, semantic_search_ready, doc_embeddings_matrix, all_disease_names, embedding_model)

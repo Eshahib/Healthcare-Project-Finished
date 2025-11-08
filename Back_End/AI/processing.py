@@ -1,10 +1,5 @@
-from collections import Counter
-
-STOP_WORDS = set([
-    'a', 'an', 'the', 'i', 'me', 'my', 'is', 'am', 'are', 'have', 'had',
-    'and', 'or', 'but', 'with', 'of', 'in', 'on', 'at', 'to', 'for', 
-    'feeling', 'symptoms', 'pains', 'feels', 'like'
-])
+import numpy as np
+import google.generativeai as genai
 
 def clean_data(df, index_name, column_mapping):
     """
@@ -86,61 +81,6 @@ def prep_RAG(dfs, base_df):
     rag_df.fillna('N/A', inplace=True)
 
     return rag_df
-
-def process_query(query):
-    """
-    Splits a query into a list of words.
-    
-    Args:
-        query (str): The query to split.
-    """
-    query = set(query.strip().lower().split(" "))
-    # print("after split: ", query)
-    query = query - STOP_WORDS
-    # print("after stop words: ", query)
-    if not query:
-        return "no keywords found"
-    return query
-
-def count_keywords(processed_query, rag_df, tiny_df, key, top_n=3):
-    """
-    Counts the keywords in the processed query, and returns the top N matching diseases.
-    
-    Args:
-        processed_query (set): The processed query.
-        rag_df (pd.DataFrame): The RAG DataFrame.
-        tiny_df (pd.DataFrame): The melted DataFrame containing disease_name and key columns.
-        key (str): The column name to search in (e.g., 'symptom').
-        top_n (int): Number of top matching diseases to return.
-    """
-    matching_disease_names = []
-    # print(tiny_df)
-    # print(tiny_df[key].head(10))
-    for keyword in processed_query:
-        matches = tiny_df[tiny_df[key].str.contains(keyword, na=False)]
-        # Extract disease names from the matches
-        if not matches.empty:
-            disease_names = matches['disease_name'].tolist()
-            matching_disease_names.extend(disease_names)
-    
-    if not matching_disease_names:
-        return None
-    
-    # Count occurrences of each disease
-    d_score = Counter(matching_disease_names)
-    top_diseases = [disease for disease, score in d_score.most_common(top_n)]
-
-    # print(top_diseases)
-    # print("________________________________")
-    try:
-        context = rag_df.loc[top_diseases]
-        return context
-    except KeyError:
-        found_diseases = [d for d in top_diseases if d in rag_df.index]
-        if not found_diseases:
-            return None
-        context = rag_df.loc[found_diseases]
-        return context
 
 def retrieve_context(rag_df, disease_query):
     """
@@ -261,3 +201,100 @@ def generate_differential_answer(context_df, user_query, model):
     # --- This is the "Generate" part ---
     response = model.generate_content(prompt)
     return response.text
+
+def setup_embedding(rag_df, embedding_model):
+    """
+    Sets up the embedding model for the RAG dataframe.
+    Args:
+        rag_df (pd.DataFrame): The RAG dataframe.
+        embedding_model (str): The embedding model to use.
+    """
+    rag_df = create_document_text(rag_df)
+    documents_list = rag_df['document_text'].tolist()
+    doc_embeddings = embed_documents(documents_list, embedding_model)
+
+    return doc_embeddings
+
+def create_document_text(rag_df):
+    """
+    Creates a single "document" string for each disease
+    for embedding.
+    """
+    print("Creating text documents for embedding...")
+    # Combine all useful text fields into one string
+    def combine_texts(row):
+        # We use .get(col, 'N/A') to be safe
+        text = f"Disease: {row.name}. " \
+               f"Description: {row.get('description', 'N/A')}. " \
+               f"Symptoms: {row.get('symptom', 'N/A')}. " \
+               f"Causes: {row.get('cause', 'N/A')}. " \
+               f"Treatments: {row.get('treatment', 'N/A')}. " \
+               f"Complications: {row.get('complication', 'N/A')}. " \
+               f"Prognosis: {row.get('prognosis', 'N/A')}. " \
+               f"Severity: {row.get('severity', 'N/A')}. " \
+               f"Diagnosis: {row.get('diagnosis', 'N/A')}. " \
+               f"Region: {row.get('region', 'N/A')}."
+        return text
+
+    rag_df['document_text'] = rag_df.apply(combine_texts, axis=1)
+    print("Text documents created.")
+    return rag_df
+
+def embed_documents(documents_list, embedding_model):
+    """
+    Calls the Google AI API to embed a batch of documents.
+    NOTE: This requires the 'model' object to be passed in.
+    """
+    print(f"Embedding {len(documents_list)} documents... (This may take a moment)")
+    
+    # Use the embedding model
+    # Note: In a real app, you'd handle API errors, etc.
+    try:
+        result = genai.embed_content(
+            model=embedding_model,
+            content=documents_list,
+            task_type="RETRIEVAL_DOCUMENT" # Critical for search
+        )
+        print("Embeddings created successfully.")
+        return result['embedding']
+    except Exception as e:
+        print(f"Error creating embeddings: {e}")
+        return None
+
+def embed_query(query, model):
+    """
+    Embeds a single user query.
+    """
+    try:
+        result = genai.embed_content(
+            model=model, # Use the embedding model string
+            content=query,
+            task_type="RETRIEVAL_QUERY" # Critical for search
+        )
+        return result['embedding']
+    except Exception as e:
+        print(f"Error embedding query: {e}")
+        return None
+
+def find_nearest_neighbors(query_vector, doc_embeddings_matrix, all_disease_names, top_n=3):
+    """
+    Finds the top_n closest document vectors to the query vector
+    using cosine similarity (calculated with numpy).
+    """
+    
+    #similarity equation: dot product of query and embeded data / (norm of query * norm of data)
+    # Calculate dot products
+    dot_products = np.dot(doc_embeddings_matrix, query_vector)
+    
+    # Calculate norms
+    doc_norms = np.linalg.norm(doc_embeddings_matrix, axis=1)
+    query_norm = np.linalg.norm(query_vector)
+    
+    # Calculate similarities
+    similarities = dot_products / (doc_norms * query_norm) #provides a similarity score for each disease row
+    
+    top_n_indices = np.argsort(similarities)[-top_n:][::-1] #sort lowest to highest, grab last 3 and reverses it to get top 3
+    
+    top_n_diseases = [all_disease_names[i] for i in top_n_indices] #get the disease names via matching indices
+    
+    return top_n_diseases
