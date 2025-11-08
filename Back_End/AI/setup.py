@@ -1,6 +1,7 @@
 import google.generativeai as genai
 import numpy as np
 import os
+import json
 import pandas as pd
 from dotenv import load_dotenv
 import kagglehub
@@ -77,14 +78,25 @@ for new_name, col_list in melt_groups.items():
 
 new_df = prep_RAG(tidy_dataframes, base_df)
 print("READY ")
-doc_embeddings = setup_embedding(new_df, embedding_model)
+
+
+embedding_file = 'disease_embeddings.npy'
+document_text_file = 'disease_document_text.json'
 semantic_search_ready = False
 
-if doc_embeddings:
-    doc_embeddings_matrix = np.array(doc_embeddings)
-    all_disease_names = new_df.index.tolist()
+if os.path.exists(embedding_file) and os.path.exists(document_text_file):
+    doc_embeddings_matrix = np.load(embedding_file)
+    new_df = pd.read_json(document_text_file, orient='index')
     semantic_search_ready = True
 else:
-    semantic_search_ready = False
+    doc_embeddings = setup_embedding(new_df, embedding_model, document_text_file)
+    if doc_embeddings:
+        doc_embeddings_matrix = np.array(doc_embeddings)
+        np.save(embedding_file, doc_embeddings_matrix)
+        semantic_search_ready = True
+    else:
+        semantic_search_ready = False
+
+all_disease_names = new_df.index.tolist()
 
 chatloop(new_df, model, semantic_search_ready, doc_embeddings_matrix, all_disease_names, embedding_model)

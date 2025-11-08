@@ -202,7 +202,7 @@ def generate_differential_answer(context_df, user_query, model):
     response = model.generate_content(prompt)
     return response.text
 
-def setup_embedding(rag_df, embedding_model):
+def setup_embedding(rag_df, embedding_model, document_text_file):
     """
     Sets up the embedding model for the RAG dataframe.
     Args:
@@ -210,6 +210,7 @@ def setup_embedding(rag_df, embedding_model):
         embedding_model (str): The embedding model to use.
     """
     rag_df = create_document_text(rag_df)
+    rag_df.to_json(document_text_file, orient='index')
     documents_list = rag_df['document_text'].tolist()
     doc_embeddings = embed_documents(documents_list, embedding_model)
 
