@@ -29,7 +29,8 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
         if (res.ok) {
           const data = await res.json();
           onAuthSuccess(data.user);
-          navigate("/symptoms");
+          console.log("this runs");
+          navigate("http://localhost:5173/symptoms");
         }
       })
       .catch(() => {

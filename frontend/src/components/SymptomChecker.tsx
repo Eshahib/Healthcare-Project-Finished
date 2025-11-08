@@ -94,7 +94,7 @@ export default function SymptomChecker({ user, onLogout, onAnalyzeComplete }: Sy
         comments: patientComments.trim() || undefined,
         user_email: user?.email ?? undefined,      
       })
-
+      console.log(response.id)
       // Navigate to results page
       onAnalyzeComplete(response.id)
       

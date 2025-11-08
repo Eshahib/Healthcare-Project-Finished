@@ -13,12 +13,16 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [symptomEntryId, setsymptomEntryId] = useState<number> (-1)
 
+  const navigate = useNavigate();
+
   const handleAnalyzeComplete = (entryId: number) => {
-    setsymptomEntryId(entryId)
+    setsymptomEntryId(entryId);
+    navigate(`/results/${entryId}`);
   }
 
   const handleBackToSymptoms = () => {
-    setsymptomEntryId(-1)
+    setsymptomEntryId(-1);
+    navigate("/symptoms");
   }
 
   useEffect(() => {
@@ -39,7 +43,6 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
       <Routes>
         <Route
           path="/"
@@ -68,7 +71,7 @@ function App() {
         />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
-    </BrowserRouter>
+    
   );
 }
 

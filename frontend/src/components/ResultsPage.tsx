@@ -22,10 +22,12 @@ export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: 
         setIsLoading(true)
         const data = await getSymptomEntry(symptomEntryId)
         setSymptomEntry(data)
+        console.log(data);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load results'
         setError(errorMessage)
       } finally {
+        console.log("runs");
         setIsLoading(false)
       }
     }
