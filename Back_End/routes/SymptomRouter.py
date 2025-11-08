@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 import models
 from database import getDB
-from schemas import SymptomEntryCreate, SymptomEntryResponse, SymptomEntryWithDiagnosis
+from schemas import SymptomEntryCreate, SymptomEntryResponse, SymptomEntryWithDiagnosis, DiagnosisResponse, DiagnosisCreate
 from audit_log import log_phi_access
 
 router = APIRouter()

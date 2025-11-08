@@ -50,6 +50,8 @@ export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: 
   }, [symptomEntryId]);
 
   console.log(symptomEntry);
+  console.log(user?.username)
+  console.log(symptomEntryId)
 
   if (isLoading) {
     return (

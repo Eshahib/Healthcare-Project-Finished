@@ -132,7 +132,34 @@ async def diagnose(symptoms: SymptomInput, request: Request, db : Session = Depe
 
             diagnosis_text = data["answer"]
 
-            return data
+            encryptedText = encrypt_phi(diagnosis_text)
+
+
+            user = db.query(models.User).filter(models.User.username == symptoms.username).first()
+
+            if not user:
+                raise HTTPException(status_code= 404, detail="could not find the correct user, error in front end")
+            
+
+            symptomentry = db.query(models.SymptomEntry).filter(models.SymptomEntry.id == symptoms.symptomEntry).first()
+
+            if not symptomentry:
+                raise HTTPException(status_code= 404, detail="ccould not find symptom entry")
+            
+            
+            create_payload = DiagnosisCreate(
+                symptom_entry_id=symptoms.symptomEntry,
+                diagnosis_text=encryptedText,
+                confidence_score=None,
+                possible_conditions=None,
+                recommendations=None
+            )
+            return create_diagnosis(
+                diagnosis_data=create_payload,
+                request=request,
+                db=db
+            )
+        
         except requests.exceptions.ReadTimeout:
             print(f"Timeout, retry {attempt+1}...")
             time.sleep(2)
