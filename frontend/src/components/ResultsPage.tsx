@@ -23,14 +23,23 @@ export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: 
       setError(null);
       try {
         const symptomEntryData = await getSymptomEntry(symptomEntryId);
-
+        console.log(symptomEntryData)
+        let newArr = [...symptomEntryData.symptoms];
+        if (symptomEntryData.comments) {
+          if (Array.isArray(symptomEntryData.comments)) {
+            newArr.push(...symptomEntryData.comments);
+          } else {
+            newArr.push(symptomEntryData.comments);
+          }
+        }
+        console.log(newArr);
         const res = await fetch(`${API_BASE_URL}/make/diagnose`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            symptoms: symptomEntryData.symptoms, 
+            symptoms: newArr, 
             username: user?.username,
             symptomEntry: symptomEntryId
           })
@@ -49,6 +58,7 @@ export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: 
 
     }
     getResults();
+    
   }, [symptomEntryId, user?.username]);
 
   console.log(symptomEntry?.diagnosis?.diagnosis_text);

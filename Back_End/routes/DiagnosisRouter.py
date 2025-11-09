@@ -111,11 +111,11 @@ class SymptomInput(BaseModel):
     symptomEntry: int
 
 @router.post("/make/diagnose")
-async def diagnose(symptoms: SymptomInput, request: Request, db : Session = Depends(getDB)):
+async def diagnose(input_data: SymptomInput, request: Request, db: Session = Depends(getDB)):
     payload = {
         "agent": "Healthcare",
         "params": [
-            {"name": "symptoms", "value": symptoms.symptoms}
+            {"name": "symptoms", "value": input_data.symptoms}
         ]
     }
     headers = {
@@ -124,45 +124,52 @@ async def diagnose(symptoms: SymptomInput, request: Request, db : Session = Depe
         "apikey": NEURALSEEK_API_KEY
     }
     max_retries = 3
+    print(input_data)
     for attempt in range(max_retries):
         try:
-            response = requests.post(NEURALSEEK_API_URL, headers=headers, json=payload, timeout=30)
+            response = requests.post(NEURALSEEK_API_URL, headers=headers, json=payload, timeout=120)
             response.raise_for_status()
             data = response.json()
 
-            diagnosis_text = data["answer"]
+            diagnosis_text = data.get("answer")
+            if not diagnosis_text:
+                raise HTTPException(status_code=502, detail="Invalid response from NeuralSeek API")
 
             encryptedText = encrypt_phi(diagnosis_text)
 
-
-            user = db.query(models.User).filter(models.User.username == symptoms.username).first()
-
+            user = db.query(models.User).filter(models.User.username == input_data.username).first()
+            print(user)
             if not user:
-                raise HTTPException(status_code= 404, detail="could not find the correct user, error in front end")
-            
+                raise HTTPException(status_code=404, detail="User not found")
 
-            symptomentry = db.query(models.SymptomEntry).filter(models.SymptomEntry.id == symptoms.symptomEntry).first()
-
+            symptomentry = db.query(models.SymptomEntry).filter(models.SymptomEntry.id == input_data.symptomEntry).first()
             if not symptomentry:
-                raise HTTPException(status_code= 404, detail="ccould not find symptom entry")
-            
-            
+                raise HTTPException(status_code=404, detail="Symptom entry not found")
+            print(symptomentry)
             create_payload = DiagnosisCreate(
-                symptom_entry_id=symptoms.symptomEntry,
+                symptom_entry_id=input_data.symptomEntry,
                 diagnosis_text=diagnosis_text,
                 confidence_score=None,
                 possible_conditions=None,
                 recommendations=None
             )
-            return create_diagnosis(
+
+            # ✅ Important: await or return the diagnosis creation properly
+            result = create_diagnosis(
                 diagnosis_data=create_payload,
                 request=request,
                 db=db
             )
-        
+            return result
+
         except requests.exceptions.ReadTimeout:
-            print(f"Timeout, retry {attempt+1}...")
+            print(f"Timeout, retry {attempt + 1}...")
             time.sleep(2)
-    else:
-        print("Diagnosis failed after retries.")
+
+        except Exception as e:
+            print(f"Error during attempt {attempt + 1}: {e}")
+            time.sleep(2)
+
+    # ✅ Always return something even if retries fail
+    raise HTTPException(status_code=504, detail="NeuralSeek API timed out after multiple attempts")
 
