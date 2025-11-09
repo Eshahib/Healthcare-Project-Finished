@@ -1,0 +1,4 @@
+{{ LLM  | prompt: "Based on the following symptoms, provide a prognosis << name: symptoms, prompt: true >>" | cache: "true" }}=>{{ variable  | name: "prognosisAndSeverity" }}
+{{ LLM  | prompt: "based on the prognosis and original symptoms determine the severity level of the patient's condition. The severity level should indicate the priority and urgency for medical attention. Use a scale of 1 to 5, where 1 is low priority and 5 is high priority.\n\nSymptoms:\n<< name: symptoms, prompt: false >>\n\nPrognosis and Severity Level:<< name: prognosisAndSeverity, prompt: false >>" | cache: "true" }}=>{{ variable  | name: "output" }}
+Prognosis and Severity Level:
+<< name: output, prompt: false >>
