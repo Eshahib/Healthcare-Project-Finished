@@ -149,7 +149,7 @@ async def diagnose(symptoms: SymptomInput, request: Request, db : Session = Depe
             
             create_payload = DiagnosisCreate(
                 symptom_entry_id=symptoms.symptomEntry,
-                diagnosis_text=encryptedText,
+                diagnosis_text=diagnosis_text,
                 confidence_score=None,
                 possible_conditions=None,
                 recommendations=None
@@ -165,3 +165,4 @@ async def diagnose(symptoms: SymptomInput, request: Request, db : Session = Depe
             time.sleep(2)
     else:
         print("Diagnosis failed after retries.")
+

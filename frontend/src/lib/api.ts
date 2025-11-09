@@ -136,6 +136,7 @@ export interface DiagnosisResponse {
 
 export interface SymptomEntryWithDiagnosis extends SymptomEntryResponse {
   diagnosis: DiagnosisResponse | null;
+  diagnosis_text: string | null;
 }
 
 /**
