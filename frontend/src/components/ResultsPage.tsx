@@ -57,9 +57,9 @@ export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: 
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+          <div className="bg-white rounded-lg shadow-sm p-12 text-center border border-gray-200">
             <Loader2 className="h-12 w-12 animate-spin text-purple-600 mx-auto mb-4" />
-            <p className="text-gray-600">Loading your results...</p>
+            <p className="text-gray-900">Loading your results...</p>
           </div>
         </div>
       </div>
@@ -70,12 +70,12 @@ export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: 
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-sm p-8">
+          <div className="bg-white rounded-lg shadow-sm p-8 border border-gray-200">
             <div className="flex items-center gap-3 text-red-600 mb-4">
               <AlertCircle className="h-6 w-6" />
               <h2 className="text-xl font-semibold">Error Loading Results</h2>
             </div>
-            <p className="text-gray-600 mb-6">{error}</p>
+            <p className="text-gray-900 mb-6">{error}</p>
             <Button onClick={onBack} variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Symptom Checker

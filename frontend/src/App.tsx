@@ -54,7 +54,11 @@ function App() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-900">Loading...</div>
+      </div>
+    );
   }
 
   return (
