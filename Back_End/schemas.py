@@ -40,6 +40,7 @@ class SymptomEntryCreate(BaseModel):
     symptoms: List[str] = Field(..., min_items=1, description="List of selected symptoms")
     comments: Optional[str] = Field(None, description="Patient's additional comments")
     user_id: Optional[int] = Field(None, description="User ID if authenticated")
+    user_email: str = Field(None, description="User ID if authenticated")
 
 
 class SymptomEntryResponse(BaseModel):
