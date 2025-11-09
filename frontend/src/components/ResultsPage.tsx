@@ -87,29 +87,59 @@ export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: 
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-      <div className="max-w-4xl w-full bg-white rounded-lg shadow-md p-8">
+  <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+    <div className="max-w-4xl w-full bg-white rounded-lg shadow-md p-8">
 
-        {/* Diagnosis Text */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-3">Diagnosis</h2>
-          <p className="text-gray-700 whitespace-pre-wrap">{symptomEntry?.diagnosis_text || "No diagnosis available."}</p>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-4">
-          <Button
-            onClick={onBack}
-            variant="outline"
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 transition"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Submit New Symptoms
-          </Button>
-        </div>
-
+      {/* Diagnosis Text */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-3">Diagnosis</h2>
+        <p className="text-gray-700 whitespace-pre-wrap">
+          {symptomEntry?.diagnosis_text || "No diagnosis available."}
+        </p>
       </div>
+
+      {/* Disclaimer */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
+          <p className="text-sm text-yellow-800">
+            This tool provides educational information only. Always consult a healthcare
+            professional for medical advice and proper diagnosis.
+          </p>
+        </div>
+      </div>
+
+      {/* Recommendations if present */}
+      {symptomEntry?.diagnosis?.recommendations ? (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
+          <h3 className="font-semibold text-gray-900 mb-3">Recommendations</h3>
+          <p className="text-gray-700 whitespace-pre-wrap">
+            {symptomEntry.diagnosis.recommendations}
+          </p>
+        </div>
+      ) : (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center mb-6">
+          <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-sm text-gray-500">
+            Your symptoms have been submitted. Analysis results will appear here once processing is complete.
+          </p>
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="flex gap-4">
+        <Button
+          onClick={onBack}
+          variant="outline"
+          className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 transition"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Submit New Symptoms
+        </Button>
+      </div>
+
     </div>
-  )
+  </div>
+)
 }
 
