@@ -22,13 +22,15 @@ export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: 
       setIsLoading(true);
       setError(null);
       try {
+        const symptomEntryData = await getSymptomEntry(symptomEntryId);
+
         const res = await fetch(`${API_BASE_URL}/make/diagnose`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            symptoms: ["fever", "cough", "fatigue", "vomitting from head injury"], 
+            symptoms: symptomEntryData.symptoms, 
             username: user?.username,
             symptomEntry: symptomEntryId
           })
@@ -47,9 +49,9 @@ export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: 
 
     }
     getResults();
-  }, [symptomEntryId]);
+  }, [symptomEntryId, user?.username]);
 
-  console.log(symptomEntry?.diagnosis_text);
+  console.log(symptomEntry?.diagnosis?.diagnosis_text);
   console.log(user?.username)
   console.log(symptomEntryId)
 
@@ -94,7 +96,7 @@ export default function ResultsPage({ symptomEntryId, user, onBack, onLogout }: 
       <div className="mb-6">
         <h2 className="text-2xl font-semibold text-gray-800 mb-3">Diagnosis</h2>
         <p className="text-gray-700 whitespace-pre-wrap">
-          {symptomEntry?.diagnosis_text || "No diagnosis available."}
+          {symptomEntry?.diagnosis?.diagnosis_text || "No diagnosis available."}
         </p>
       </div>
 
