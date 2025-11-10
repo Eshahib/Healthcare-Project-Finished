@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="720" viewBox="0 0 1100 720">
+  <defs>
+    <style>
+      .box {
+        fill: #ffffff;
+        stroke: #1a1a1a;
+        stroke-width: 3;
+      }
+      .title {
+        font-family: "DM Sans", "Segoe UI", Arial, sans-serif;
+        font-size: 34px;
+        font-weight: 700;
+        fill: #1a1a1a;
+      }
+      .subtitle {
+        font-family: "DM Sans", "Segoe UI", Arial, sans-serif;
+        font-size: 24px;
+        font-weight: 600;
+        fill: #1a1a1a;
+      }
+      .caption {
+        font-family: "DM Sans", "Segoe UI", Arial, sans-serif;
+        font-size: 20px;
+        font-weight: 500;
+        fill: #2d2d2d;
+      }
+      .note {
+        font-family: "DM Sans", "Segoe UI", Arial, sans-serif;
+        font-size: 20px;
+        font-weight: 500;
+        fill: #3d3d3d;
+      }
+      .tech {
+        font-family: "DM Sans", "Segoe UI", Arial, sans-serif;
+        font-size: 22px;
+        font-weight: 600;
+        fill: #1487ff;
+      }
+      .accent {
+        font-family: "DM Sans", "Segoe UI", Arial, sans-serif;
+        font-size: 22px;
+        font-weight: 600;
+        fill: #14b8a6;
+      }
+      .arrow {
+        fill: none;
+        stroke: #1a1a1a;
+        stroke-width: 3.2;
+        marker-end: url(#arrowhead);
+      }
+      .double {
+        marker-start: url(#arrowhead);
+      }
+    </style>
+    <marker id="arrowhead" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#1a1a1a"/>
+    </marker>
+  </defs>
+  <rect x="20" y="20" width="1060" height="680" rx="42" fill="#fafafa" stroke="#e2e2e2" stroke-width="2"/>
+
+  <rect class="box" x="380" y="60" width="340" height="180" rx="36"/>
+  <text class="title" x="430" y="115">Frontend</text>
+  <text class="caption" x="430" y="155">SPA for clinicians & patients</text>
+  <text class="tech" x="430" y="195">React.js · TypeScript</text>
+  <text class="accent" x="430" y="225">Tailwind CSS · shadcn/ui</text>
+
+  <rect class="box" x="400" y="260" width="300" height="180" rx="32"/>
+  <text class="title" x="440" y="315">Backend</text>
+  <text class="caption" x="440" y="355">HealthCheckAI API layer</text>
+  <text class="tech" x="440" y="395">FastAPI</text>
+  <text class="accent" x="440" y="430">Python</text>
+
+  <rect class="box" x="810" y="240" width="240" height="210" rx="32"/>
+  <text class="title" x="850" y="300">Database</text>
+  <text class="caption" x="850" y="340">Structured records</text>
+  <text class="tech" x="850" y="385">MySQL</text>
+  <text class="note" x="850" y="420">PHI compliant schemas</text>
+
+  <rect class="box" x="760" y="480" width="300" height="190" rx="32"/>
+  <text class="title" x="790" y="535">LLM Services</text>
+  <text class="caption" x="790" y="575">Clinical reasoning</text>
+  <text class="tech" x="790" y="615">NeuralSeek API</text>
+  <text class="note" x="790" y="650">Guardrailed prompts</text>
+
+  <rect class="box" x="40" y="260" width="280" height="200" rx="32"/>
+  <text class="title" x="80" y="320">Observability</text>
+  <text class="caption" x="80" y="360">Audit & metrics</text>
+  <text class="tech" x="80" y="400">Structured logging</text>
+  <text class="note" x="80" y="435">HIPAA audit trail</text>
+
+  <rect class="box" x="60" y="500" width="300" height="190" rx="32"/>
+  <text class="title" x="95" y="560">Deployment</text>
+  <text class="caption" x="95" y="600">Containerized services</text>
+  <text class="tech" x="95" y="640">CI/CD · Infrastructure as Code</text>
+
+  <path class="arrow" d="M550 240 L550 260"/>
+  <path class="arrow double" d="M700 350 C760 340 810 340 810 340"/>
+  <path class="arrow double" d="M700 420 C780 450 910 490 910 480"/>
+  <path class="arrow" d="M380 150 C300 150 220 240 220 260"/>
+  <path class="arrow" d="M220 460 C220 500 260 500 260 500"/>
+  <path class="arrow" d="M360 340 C300 340 320 360 320 360"/>
+  <path class="arrow" d="M360 420 C280 470 360 530 360 530"/>
+  <path class="arrow" d="M520 440 C520 520 520 520 520 520 L360 520"/>
+  <path class="arrow" d="M520 440 C580 520 620 550 760 540"/>
+  <path class="arrow" d="M720 620 L760 620"/>
+
+  <text class="subtitle" x="430" y="52">HealthCheckAI Architecture</text>
+</svg>
